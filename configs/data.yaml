@@ -1,7 +1,7 @@
 data:
   provider: jqdata
-  sample_start: TBD
-  sample_end: TBD
+  sample_start: 2008-01-01
+  sample_end: 2022-12-31
   universe:
     name: csi300_historical
     index_code: 000300.XSHG
@@ -16,9 +16,17 @@ point_in_time:
 
 fields:
   price: [open, high, low, close, volume, money, factor]
+  # 停牌/涨跌停：免费账户 get_price 未返回，P1 待补（见 src/data/download_missing.py）
   tradability: [paused, high_limit, low_limit, is_st]
+  # 行业：status_industry.csv 原为全空，P1 待补（时点正确）
   cross_section: [industry_sw_l1, market_cap, circulating_market_cap]
-  financial: TBD
+  financial:
+    valuation: [pe_ratio, pb_ratio, market_cap, circulating_market_cap]
+    indicator: [roe, eps, gross_profit_margin, net_profit_margin]
+    balance: [total_assets, total_liability, total_equity]
+    income: [total_operating_revenue, net_profit]
+    cash_flow: [net_operate_cash_flow]
+    # 公告日 pubDate 用于点状时点对齐；get_fundamentals(date=) 本身按公告日取数
 
 storage:
   raw_dir: data/raw

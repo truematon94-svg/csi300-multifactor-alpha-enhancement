@@ -1,20 +1,65 @@
+# 研究配置 —— 自研多因子 + 方法借鉴（非复现）
 research:
-  anchor_report: TBD
-  rebalance_frequency: TBD
-  holding_period: TBD
-  execution_price: t1_open
+  method_framework:          # 方法借鉴：只借口径、不逐项复制数值
+    primary: 华泰证券多因子系列（之一~九：单因子测试；之十：因子合成；之十二：结构化风险模型）
+    portfolio: 长江证券 沪深300多因子增强策略
+    optimization: 光大证券 单因子组合优化在指数增强中的应用
+    attribution: 渤海证券 沪深300指数增强组合业绩归因分析
+  rebalance_frequency: monthly      # 月度调仓
+  holding_period: 1m                # 约 21 交易日
+  execution_price: t1_open          # t 日收盘定信号，t+1 开盘成交
 
-factor_families:
-  value: TBD
-  quality: TBD
-  growth: TBD
-  momentum_reversal: TBD
-  low_volatility_risk: TBD
-  liquidity: TBD
-  project2_extension: TBD
+# 9 个候选因子（核心 6 + 3 个正交加码）。sign 为方向，构造时统一为 sign*raw，
+# 使"值越大预期收益越高"。P2 用截面相关性矩阵去冗余，最终收敛 6~8 个。
+factors:
+  value_ep:
+    family: value
+    formula: 净利润(TTM) / 总市值
+    sign: +1
+    data: financial
+  quality_roe:
+    family: quality
+    formula: 净利润(TTM) / 净资产
+    sign: +1
+    data: financial
+  quality_accruals:
+    family: quality
+    formula: (净利润 - 经营现金流) / 总资产
+    sign: -1          # 低应计 = 高盈利质量 = 高收益；与 ROE 负相关
+    data: financial
+  growth_revenue:
+    family: growth
+    formula: 营业收入同比增速
+    sign: +1
+    data: financial
+  momentum_12_1:
+    family: momentum_reversal
+    formula: 过去12月收益(剔除最近1月)
+    sign: +1
+    data: price
+  reversal_1m:
+    family: momentum_reversal
+    formula: 最近1月收益
+    sign: -1          # 与 momentum_12_1 负相关，真正独立
+    data: price
+  lowvol_idio:
+    family: low_volatility_risk
+    formula: 市场/风格因子回归残差标准差
+    sign: -1
+    data: price
+  liquidity_turnover:
+    family: liquidity
+    formula: 近20日日均换手率
+    sign: -1
+    data: price
+  quality_leverage:
+    family: quality
+    formula: 净资产 / 总资产   # 权益比，低杠杆=高值
+    sign: +1
+    data: financial
 
 preprocess:
-  winsorize: TBD
+  winsorize: mad_3                 # 截面 MAD 3 倍缩尾
   standardize: cross_sectional_zscore
   neutralize: [industry_sw_l1, log_market_cap]
 
@@ -25,20 +70,21 @@ alpha_combination:
 portfolio:
   baselines: [csi300, constituent_equal_weight, topk_equal_weight]
   optimizer: constrained_long_only
-  max_stock_weight: TBD
-  max_active_stock_weight: TBD
-  max_industry_active_weight: TBD
-  turnover_limit: TBD
-  risk_aversion: TBD
-  turnover_penalty: TBD
+  max_stock_weight: 0.10
+  max_active_stock_weight: 0.02
+  max_industry_active_weight: 0.05
+  # 以下三项依赖 alpha 尺度与跟踪误差目标，P5 冻结
+  turnover_limit: null
+  risk_aversion: null
+  turnover_penalty: null
 
 cost:
-  commission: TBD
-  stamp_tax: TBD
-  slippage: TBD
-  min_commission: TBD
+  commission: 0.00025    # 佣金 万2.5（双边）
+  stamp_tax: 0.001       # 印花税 千1（卖出）
+  slippage: 0.001        # 滑点 10bp
+  min_commission: 5      # 最低佣金 5 元
 
 split:
-  train: TBD
-  valid: TBD
-  test: TBD
+  train: [2008-01-01, 2019-12-31]
+  valid: null            # 传统多因子冻结一次测试一次，不设独立验证
+  test: [2020-01-01, 2022-12-31]
