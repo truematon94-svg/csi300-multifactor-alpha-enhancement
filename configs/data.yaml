@@ -1,0 +1,25 @@
+data:
+  provider: jqdata
+  sample_start: TBD
+  sample_end: TBD
+  universe:
+    name: csi300_historical
+    index_code: 000300.XSHG
+  benchmark: 000300.XSHG
+  frequency: daily
+  adjustment: pre_adjusted
+
+point_in_time:
+  use_historical_constituents: true
+  use_financial_publish_date: true
+  preserve_delisted_stocks: true
+
+fields:
+  price: [open, high, low, close, volume, money, factor]
+  tradability: [paused, high_limit, low_limit, is_st]
+  cross_section: [industry_sw_l1, market_cap, circulating_market_cap]
+  financial: TBD
+
+storage:
+  raw_dir: data/raw
+  processed_dir: data/processed

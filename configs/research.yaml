@@ -1,0 +1,44 @@
+research:
+  anchor_report: TBD
+  rebalance_frequency: TBD
+  holding_period: TBD
+  execution_price: t1_open
+
+factor_families:
+  value: TBD
+  quality: TBD
+  growth: TBD
+  momentum_reversal: TBD
+  low_volatility_risk: TBD
+  liquidity: TBD
+  project2_extension: TBD
+
+preprocess:
+  winsorize: TBD
+  standardize: cross_sectional_zscore
+  neutralize: [industry_sw_l1, log_market_cap]
+
+alpha_combination:
+  methods: [equal_weight, train_ic_weight, risk_adjusted_weight]
+  fit_on_train_only: true
+
+portfolio:
+  baselines: [csi300, constituent_equal_weight, topk_equal_weight]
+  optimizer: constrained_long_only
+  max_stock_weight: TBD
+  max_active_stock_weight: TBD
+  max_industry_active_weight: TBD
+  turnover_limit: TBD
+  risk_aversion: TBD
+  turnover_penalty: TBD
+
+cost:
+  commission: TBD
+  stamp_tax: TBD
+  slippage: TBD
+  min_commission: TBD
+
+split:
+  train: TBD
+  valid: TBD
+  test: TBD

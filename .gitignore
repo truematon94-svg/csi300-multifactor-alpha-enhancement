@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Notebook / IDE
+.ipynb_checkpoints/
+.vscode/
+.idea/
+
+# Secrets and local collaboration notes
+.env
+*.key
+WORKLOG.md
+
+# Raw and processed data are reproducible but not committed
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# Large or temporary artifacts
+*.zip
+*.7z
+*.pkl
+*.pickle
+*.joblib
+*.npy
+*.npz
+*.parquet
+checkpoints/
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
