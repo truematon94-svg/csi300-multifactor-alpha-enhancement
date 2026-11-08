@@ -16,8 +16,8 @@
 
 已确认可用：`get_price`(日频 OHLCV+factor)、`get_index_stocks`(历史成分)、`get_security_info`(上市日)、`get_extras('is_st')`、`get_fundamentals`(valuation 市值)。
 
-三个缺口（P1 补）：
-1. 申万行业 sw_l1：`get_industry` 返回空（免费账户不可得，申万/证监会/聚宽均无），已确认降级为仅市值中性化、去行业偏离约束；
+三个缺口（P0 审计时识别，后续处理状态见各条）：
+1. 申万行业 sw_l1：`get_industry` 返回空（免费账户不可得，申万/证监会/聚宽均无）；后续引入外部静态 2025 版申万一级行业映射，已恢复行业中性化和行业偏离约束，但该映射非严格时点数据；
 2. 停牌/涨跌停：`get_price` 未返回 `high_limit/low_limit/paused`，P6 可执行回测受限；
 3. 财务+公告日：未下载，需 `get_fundamentals(query(balance/income/cashflow...))` + `pubDate`。
 

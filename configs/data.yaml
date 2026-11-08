@@ -16,9 +16,9 @@ point_in_time:
 
 fields:
   price: [open, high, low, close, volume, money, factor]
-  # 停牌/涨跌停：免费账户 get_price 未返回，P1 待补（见 src/data/download_missing.py）
+  # 停牌/涨跌停：免费账户 get_price 未返回；本地回测不逐笔模拟，聚宽版按平台规则处理
   tradability: [paused, high_limit, low_limit, is_st]
-  # 行业：status_industry.csv 原为全空，P1 待补（时点正确）
+  # 行业：聚宽时点行业不可得，最终采用外部静态 2025 行业映射（industry_sw_l1_map.csv）
   cross_section: [industry_sw_l1, market_cap, circulating_market_cap]
   financial:
     valuation: [pe_ratio, pb_ratio, market_cap, circulating_market_cap]

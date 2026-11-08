@@ -109,6 +109,7 @@ def export_robustness(ks=(30, 50, 80)):
     alpha = pd.read_parquet(PROC + "/alpha_panel.parquet")
     uni = pd.read_parquet(PROC + "/universe_csi300.parquet")
     close = pd.read_parquet(PROC + "/close.parquet")
+    mc = pd.read_parquet(PROC + "/market_cap.parquet")
     dates = rebalance_dates(close)
     fwd = forward_ret(close, dates)
     uni_map = uni.groupby("ym")["code"].apply(set).to_dict()
@@ -121,7 +122,8 @@ def export_robustness(ks=(30, 50, 80)):
             members = uni_map.get(ym, set())
             a = alpha[alpha["date"] == d].set_index("code")["equal"].dropna()
             r = fwd.loc[d].dropna()
-            common = sorted(set(a.index) & set(r.index) & members)
+            mc_d = mc.loc[d].dropna() if d in mc.index else pd.Series(dtype=float)
+            common = sorted(set(a.index) & set(r.index) & set(mc_d.index) & members)
             if len(common) < K:
                 continue
             top = a.loc[common].nlargest(K).index
@@ -145,6 +147,23 @@ def export_robustness(ks=(30, 50, 80)):
     return out
 
 
+def export_grouping_summary():
+    gr = pd.read_parquet(PROC + "/group_returns.parquet")
+    gr.index.name = "factor"
+    gr.to_csv(RES + "/factor_tests/grouping_summary.csv")
+    return gr
+
+
+def export_factor_annual_ic():
+    ic = pd.read_parquet(PROC + "/ic_series.parquet")
+    ic["year"] = pd.to_datetime(ic["date"]).dt.year
+    annual = (ic.groupby(["factor", "year"])
+                .agg(IC_mean=("IC", "mean"), RankIC_mean=("RankIC", "mean"))
+                .reset_index())
+    annual.to_csv(RES + "/factor_tests/factor_annual_ic.csv", index=False)
+    return annual
+
+
 def main():
     for sub in ["factor_tests", "backtests", "attribution"]:
         os.makedirs(RES + "/" + sub, exist_ok=True)
@@ -154,6 +173,8 @@ def main():
     export_annual_returns()
     export_factor_tilts()
     export_robustness()
+    export_grouping_summary()
+    export_factor_annual_ic()
     print("公开结果表已导出到 results/ 下")
 
 
