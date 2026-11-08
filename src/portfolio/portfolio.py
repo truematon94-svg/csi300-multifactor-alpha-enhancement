@@ -36,7 +36,9 @@ def build_portfolios(K=50):
     close = pd.read_parquet(PROC + "/close.parquet")
 
     dates = rebalance_dates(close)
-    fwd_ret = close.loc[dates].pct_change(fill_method=None).shift(-1)
+    close_dates = close.loc[dates]
+    close_t1 = close.shift(-1).loc[dates]  # T+1 收盘价（t+1 成交，去收盘价前视）
+    fwd_ret = close_dates.shift(-1) / close_t1 - 1
     bench_ret = _benchmark_ret(dates)
     uni_map = uni.groupby("ym")["code"].apply(set).to_dict()
 

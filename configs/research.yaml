@@ -61,7 +61,7 @@ factors:
 preprocess:
   winsorize: mad_3                 # 截面 MAD 3 倍缩尾
   standardize: cross_sectional_zscore
-  neutralize: [industry_sw_l1, log_market_cap]
+  neutralize: [industry_sw_l1, log_market_cap]   # 行业数据已补(静态2025, 覆盖94%)
 
 alpha_combination:
   methods: [equal_weight, train_ic_weight, risk_adjusted_weight]
@@ -72,7 +72,7 @@ portfolio:
   optimizer: constrained_long_only
   max_stock_weight: 0.10
   max_active_stock_weight: 0.02
-  max_industry_active_weight: 0.05
+  max_industry_active_weight: 0.05   # 行业数据已补，恢复行业偏离约束
   # 以下三项依赖 alpha 尺度与跟踪误差目标，P5 冻结
   turnover_limit: null
   risk_aversion: null

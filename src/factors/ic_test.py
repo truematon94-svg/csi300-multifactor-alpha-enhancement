@@ -27,7 +27,8 @@ def compute_ic():
 
     dates = rebalance_dates(close)
     close_dates = close.loc[dates]
-    fwd_ret = close_dates.pct_change(fill_method=None).shift(-1)  # 前向1月收益
+    close_t1 = close.shift(-1).loc[dates]  # T+1 收盘价（t+1 成交，去收盘价前视）
+    fwd_ret = close_dates.shift(-1) / close_t1 - 1  # t+1 成交前向收益
 
     rows = []
     for factor, grp in fp.groupby("factor"):
