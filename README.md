@@ -1,15 +1,13 @@
 # 沪深300多因子 Alpha 与指数增强
 
-## 项目定位
+以历史时点真实的沪深300成分股为研究对象，建立从单因子检验、多因子 Alpha 合成，到带基准、风险、换手和交易成本约束的指数增强组合构建的完整研究链路。
 
-本项目以历史时点真实的沪深300成分股为研究对象，建立一条从单因子检验、多因子 Alpha 合成，到带基准、风险、换手和交易成本约束的指数增强组合构建链路。
+## 研究结论
 
-研究重点不是堆叠大量因子，也不是只展示一条收益曲线，而是回答：
-
-1. 哪些因子在严格样本外具有稳定的横截面预测能力？
-2. 不同因子如何去冗余、中性化并合成为稳健 Alpha？
-3. 综合 Alpha 能否在沪深300基准约束和真实交易成本下转化为超额收益？
-4. 超额收益来自选股、行业偏离、风格暴露还是偶然市场阶段？
+- 6 个候选因子（价值 EP、质量 ROE、成长营收同比、反转、低波特异波动、流动性换手）在训练期（2008–2019）具有稳定的横截面预测能力（RankIC 0.03~0.05，RankICIR 0.38~0.56）。
+- 等权合成后综合 alpha 的训练期 RankICIR 达 0.95，显著高于任一单因子。
+- 约束型指数增强在 2008–2022 全区间取得正超额（信息比率 0.53、正 alpha、超额约 3.7%/年），并在 2023–2025 全新样本外继续有效（超额约 5%/年）。
+- 价值/质量因子在 2021–2022 存在明显失效期。
 
 ## 研究链路
 
@@ -25,27 +23,57 @@
 → 样本外稳健性和正式报告
 ```
 
-## 项目边界
+## 目录结构
 
-- 主股票池：历史时点真实的沪深300成分股；
-- 主基准：沪深300指数 `000300.XSHG`；
-- 主频率：日频数据、月度或预先冻结的调仓频率；
-- 研究主线：传统多因子 Alpha 研究与合成；
-- 指数增强：综合 Alpha 的下游应用，不替代因子研究；
-- 方法借鉴框架已定（华泰多因子系列为主），自研多因子、不逐项复现；
-- 所有财务因子必须遵守公告可得日，禁止使用事后财报信息；
-- README 只记录已经完成且可核验的结果。
+```
+├── configs/          研究配置（因子、参数、切分）
+├── data/             原始数据与中间数据（gitignore，不提交）
+├── docs/             研究协议、因子字典、数据字典、研究报告
+├── src/              代码
+│   ├── data/         数据下载与面板构建
+│   ├── factors/      因子计算、预处理、单因子检验
+│   ├── portfolio/    Alpha 合成、组合构建、约束优化
+│   ├── backtest/     回测与聚宽回测版
+│   └── attribution/  收益归因与稳健性
+├── results/          结果表与图表
+├── README.md
+└── WORKFLOW.md
+```
 
-## 当前状态
+## 复现
 
-- [x] 确定项目范围、研究对象和目录结构
-- [x] 确定方法借鉴框架（华泰为主 + 长江/光大/渤海）
-- [x] 完成数据可得性审计（缺口：财务/行业/停涨跌停，P1 补）
-- [x] 冻结因子库（9 候选）和样本切分（2008-2019/2020-2022）
-- [ ] 完成单因子检验与冗余分析
-- [ ] 完成多因子 Alpha 合成
-- [ ] 完成约束型指数增强与可执行回测
-- [ ] 完成收益归因、稳健性和正式发布
+```bash
+# 1. 基础面板（行情/财务/行业/市值/成分 -> parquet）
+python src/data/build_base.py
 
-完整执行顺序见 [WORKFLOW.md](WORKFLOW.md)，研究口径见 [docs/research_protocol.md](docs/research_protocol.md)。
+# 2. 因子计算 + 预处理（中性化）
+python src/factors/factors.py
+python src/factors/preprocess.py
 
+# 3. 单因子检验
+python src/factors/ic_test.py
+python src/factors/grouping_test.py
+
+# 4. Alpha 合成
+python src/portfolio/alpha.py
+
+# 5. 组合构建与回测
+python src/portfolio/portfolio.py
+python src/portfolio/optimize.py
+python src/backtest/backtest.py
+
+# 6. 收益归因
+python src/attribution/attribution.py
+```
+
+聚宽回测版见 `src/backtest/joinquant_backtest.py`。
+
+## 数据与因子
+
+- 因子定义：`docs/factor_dictionary.md`
+- 数据字段：`docs/data_dictionary.md`
+- 研究协议：`docs/research_protocol.md`
+
+## 免责声明
+
+本项目仅用于量化研究方法展示，不构成任何投资建议。
