@@ -39,7 +39,10 @@ def snapshot_dates(freq="month"):
                       ['close'], fq='pre', panel=False)
     cal = pd.to_datetime(bench['close'].sort_index().index)
     if freq == "month":
-        return [d.strftime('%Y-%m-%d') for d in cal.groupby(cal.strftime('%Y-%m')).max()]
+        last = {}
+        for d in cal:
+            last[d.strftime('%Y-%m')] = d
+        return [last[k].strftime('%Y-%m-%d') for k in sorted(last)]
     # 半年末最后一个交易日
     out = []
     for y in range(2008, 2023):
@@ -50,6 +53,26 @@ def snapshot_dates(freq="month"):
                 out.append(cand[-1].strftime('%Y-%m-%d'))
     return out
 
+
+
+
+def ensure_universe():
+    """聚宽里生成 universe.csv（历史成分并集）；已存在则跳过。"""
+    if _exists("universe.csv"):
+        return
+    bench = get_price(PRIMARY, SAMPLE_START, SAMPLE_END, 'daily', ['close'], fq='pre', panel=False)
+    cal = pd.to_datetime(bench['close'].sort_index().index)
+    rows = []
+    for y in range(2008, 2023):
+        for m in range(1, 13):
+            month_end = pd.Timestamp(y, m, 1) + pd.offsets.MonthEnd(0)
+            cand = cal[cal <= month_end]
+            if len(cand):
+                d = cand[-1].strftime('%Y-%m-%d')
+                for c in get_index_stocks(PRIMARY, d):
+                    rows.append({'code': c, 'date': d, 'universe': 'csi300'})
+    pd.DataFrame(rows).to_csv("universe.csv", index=False)
+    print("universe.csv 已生成：%d 行" % len(rows))
 
 # ============ 1. 探针：先搞清账户能返回什么 ============
 def probe():
@@ -79,7 +102,7 @@ def probe():
         ("indicator", query(indicator.code, indicator.roe, indicator.eps,
                             indicator.gross_profit_margin)),
         ("balance",   query(balance.code, balance.total_assets, balance.total_liability,
-                            balance.total_equity, balance.pubDate)),
+                            balance.total_owner_equities, balance.pubDate)),
         ("income",    query(income.code, income.total_operating_revenue,
                             income.net_profit, income.pubDate)),
         ("cash_flow", query(cash_flow.code, cash_flow.net_operate_cash_flow,
@@ -124,7 +147,11 @@ def _download_financial_table(name, q_builder, out_file):
                 print("    %s %s 批 %d 报错: %s" % (name, d, i, e))
             time.sleep(SLEEP)
         print("  %s %s 完成，累计 %d 行" % (name, d, sum(len(r) for r in rows)))
-    pd.concat(rows, ignore_index=True).to_csv(out_file, index=False)
+    if rows:
+        pd.concat(rows, ignore_index=True).to_csv(out_file, index=False)
+    else:
+        pd.DataFrame().to_csv(out_file, index=False)
+    print("  %s 已保存 -> %s" % (name, out_file))
 
 
 def download_financial():
@@ -141,7 +168,7 @@ def download_financial():
 
     _download_financial_table("balance", lambda codes: query(
         balance.code, balance.total_assets, balance.total_liability,
-        balance.total_equity, balance.pubDate,
+        balance.total_owner_equities, balance.pubDate,
     ).filter(balance.code.in_(codes)), "status_financial_balance.csv")
 
     _download_financial_table("income", lambda codes: query(
@@ -158,21 +185,25 @@ def download_financial():
 # 说明：申万行业会调整，需按日期取时点行业。半年末快照 + 逐票 get_industry。
 # 多种取法依次尝试，返回第一个非空；若仍全空，说明 get_industry 不可用，需换接口。
 def _get_sw_l1(c, d):
-    # 方式1：dict 形式
+    # dict 形式：遍历所有行业分类，优先 sw_l1 -> zjw -> jq_l1 -> 任意非空
     try:
         r = get_industry(c, d)
         if isinstance(r, dict):
-            sw = (r.get('sw_l1') or {}).get('industry_name')
-            if sw:
-                return sw
+            for key in ('sw_l1', 'zjw', 'jq_l1', 'sw_l2'):
+                v = r.get(key)
+                if isinstance(v, dict) and v.get('industry_name'):
+                    return v['industry_name']
+            for v in r.values():
+                if isinstance(v, dict) and v.get('industry_name'):
+                    return v['industry_name']
     except Exception:
         pass
-    # 方式2：df 形式
+    # df 形式
     try:
         r = get_industry(c, d, df=True)
         if hasattr(r, 'to_dict') and len(r):
             rec = r.to_dict('records')[0]
-            for k in ('industry_name', 'name', 'sw_l1', 'industry'):
+            for k in ('industry_name', 'name', 'sw_l1', 'industry', 'index_name'):
                 if k in rec and rec[k]:
                     return rec[k]
     except Exception:
@@ -254,8 +285,9 @@ def download_tradability():
         print("  tradability %d 完成" % y)
 
 
-if __name__ == "__main__":
-    # 直接下载（用户决定跳过 probe；出错按报错修字段名后重跑对应函数）
-    download_financial()
-    download_industry()
-    download_tradability()
+# 直接下载
+ensure_universe()
+download_financial()
+download_industry()
+download_tradability()
+print("全部下载完成")
