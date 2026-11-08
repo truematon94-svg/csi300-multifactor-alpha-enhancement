@@ -8,7 +8,7 @@ research:
   rebalance_frequency: monthly      # 月度调仓
   holding_period: 1m                # 约 21 交易日
   execution_price: t1_open          # 聚宽策略回测：t+1 开盘成交（use_real_price=True）
-  execution_price_local: t1_close   # 本地研究回测：t+1 收盘价近似（close.shift(-1)）
+  execution_price_local: t1_close   # 本地研究回测：t+1 收盘价成交（close.shift(-1)）
 
 # 9 个候选因子（核心 6 + 3 个正交加码）。sign 为方向，构造时统一为 sign*raw，
 # 使"值越大预期收益越高"。P2 用截面相关性矩阵去冗余，最终收敛 6~8 个。
